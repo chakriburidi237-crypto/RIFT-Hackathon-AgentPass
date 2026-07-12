@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AgentPass Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  </head>
+  <body>
+    <div id="app" class="min-h-screen bg-gray-100 font-sans antialiased">
+      <div class="container mx-auto p-4">
+        <h1 class="mb-6 text-4xl font-bold text-gray-800">AgentPass Dashboard</h1>
+
+        <!-- Agent Creation Form -->
+        <div class="mb-8 rounded-lg bg-white p-6 shadow-md">
+          <h2 class="mb-4 text-2xl font-semibold text-gray-700">Adopt New Agent</h2>
+          <form @submit.prevent="createAgent" class="space-y-4">
+            <div>
+              <label for="agentName" class="block text-sm font-medium text-gray-700"
+                >Agent Name:</label
+              >
+              <input
+                type="text"
+                id="agentName"
+                v-model="newAgent.name"
+                required
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+              />
+            </div>
+            <div>
+              <label for="ownerName" class="block text-sm font-medium text-gray-700"
+                >Owner Name:</label
+              >
+              <input
+                type="text"
+                id="ownerName"
+                v-model="newAgent.owner"
+                required
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+              />
+            </div>
+            <div>
+              <label for="purpose" class="block text-sm font-medium text-gray-700"
+                >Purpose:</label
+              >
+              <input
+                type="text"
+                id="purpose"
+                v-model="newAgent.purpose"
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Scopes:</label>
+              <div class="mt-1 flex flex-wrap gap-2">
+                <label v-for="scope in allScopes" :key="scope" class="inline-flex items-center">
+                  <input
+                    type="checkbox"
+                    v-model="newAgent.scopes"
+                    :value="scope"
+                    class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                  />
+                  <span class="ml-2 text-sm text-gray-700">{{ scope }}</span>
+                </label>
+              </div>
+            </div>
+            <div>
+              <label for="spendLimit" class="block text-sm font-medium text-gray-700"
+                >Spend Limit (₹):</label
+              >
+              <input
+                type="number"
+                id="spendLimit"
+                v-model.number="newAgent.spend_limit"
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+              />
+            </div>
+            <div>
+              <label for="ttlHours" class="block text-sm font-medium text-gray-700"
+                >TTL (hours):</label
+              >
+              <input
+                type="number"
+                id="ttlHours"
+                v-model.number="newAgent.ttl_hours"
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+              />
+            </div>
+            <button
+              type="submit"
+              class="rounded-md bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            >
+              Create AgentPass
+            </button>
+          </form>
+        </div>
+
+        <!-- Agent List -->
+        <div class="mb-8 rounded-lg bg-white p-6 shadow-md">
+          <h2 class="mb-4 text-2xl font-semibold text-gray-700">Active Agents</h2>
+          <div v-if="agents.length === 0" class="text-gray-600">No agents created yet.</div>
+          <div v-else class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div
+              v-for="agent in agents"
+              :key="agent.id"
+              class="rounded-lg border border-gray-200 bg-gray-50 p-4 shadow-sm"
+            >
+              <h3 class="mb-2 text-xl font-semibold text-gray-800">{{ agent.name }}</h3>
+              <p class="text-sm text-gray-600">Owner: {{ agent.owner }}</p>
+              <p class="text-sm text-gray-600">Purpose: {{ agent.purpose }}</p>
+              <p class="text-sm text-gray-600">Status: {{ agent.status }}</p>
+              <p class="text-sm text-gray-600">
+                Scopes:
+                <span
+                  v-for="scope in agent.scopes.split(',')"
+                  :key="scope"
+                  class="mr-1 inline-block rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-800"
+                  >{{ scope }}</span
+                >
+              </p>
+              <p class="text-sm text-gray-600">
+                Spend Limit: ₹{{ agent.spend_limit.toFixed(2) }}
+              </p>
+              <p class="text-sm text-gray-600">Spent: ₹{{ agent.spent.toFixed(2) }}</p>
+              <p class="text-sm text-gray-600">
+                Expires:
+                {{ new Date(agent.expires_at).toLocaleString() }}
+              </p>
+              <button
+                @click="revokeAgent(agent.id)"
+                v-if="agent.status === 'active'"
+                class="mt-4 rounded-md bg-red-600 px-3 py-1 text-sm text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+              >
+                Revoke
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Trust Log -->
+        <div class="rounded-lg bg-white p-6 shadow-md">
+          <h2 class="mb-4 text-2xl font-semibold text-gray-700">Trust Log</h2>
+          <div v-if="trustLog.length === 0" class="text-gray-600">No actions logged yet.</div>
+          <div v-else class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th
+                    scope="col"
+                    class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+                  >
+                    Timestamp
+                  </th>
+                  <th
+                    scope="col"
+                    class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+                  >
+                    Agent
+                  </th>
+                  <th
+                    scope="col"
+                    class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+                  >
+                    Owner
+                  </th>
+                  <th
+                    scope="col"
+                    class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+                  >
+                    Action Type
+                  </th>
+                  <th
+                    scope="col"
+                    class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+                  >
+                    Detail
+                  </th>
+                  <th
+                    scope="col"
+                    class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+                  >
+                    Amount (₹)
+                  </th>
+                  <th
+                    scope="col"
+                    class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+                  >
+                    Result
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-200 bg-white">
+                <tr v-for="entry in trustLog" :key="entry.id">
+                  <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                    {{ new Date(entry.timestamp).toLocaleString() }}
+                  </td>
+                  <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-900">
+                    {{ entry.agent_name }}
+                  </td>
+                  <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                    {{ entry.owner }}
+                  </td>
+                  <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                    {{ entry.action_type }}
+                  </td>
+                  <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                    {{ entry.detail }}
+                  </td>
+                  <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                    {{ entry.amount.toFixed(2) }}
+                  </td>
+                  <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                    {{ entry.result }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const { createApp, ref, onMounted, reactive } = Vue
+
+      createApp({
+        setup() {
+          const API_BASE = 'http://localhost:8000'
+          const agents = ref([])
+          const trustLog = ref([])
+          const allScopes = [
+            'browse',
+            'purchase',
+            'negotiate',
+            'post',
+            'moderate',
+          ]
+
+          const newAgent = reactive({
+            name: '',
+            owner: '',
+            purpose: '',
+            scopes: ['browse'],
+            spend_limit: 0,
+            ttl_hours: 24,
+          })
+
+          const fetchAgents = async () => {
+            try {
+              const response = await fetch(`${API_BASE}/agents`)
+              agents.value = await response.json()
+            } catch (error) {
+              console.error('Error fetching agents:', error)
+            }
+          }
+
+          const fetchTrustLog = async () => {
+            try {
+              const response = await fetch(`${API_BASE}/trust-log`)
+              trustLog.value = await response.json()
+            } catch (error) {
+              console.error('Error fetching trust log:', error)
+            }
+          }
+
+          const createAgent = async () => {
+            try {
+              const response = await fetch(`${API_BASE}/agents`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newAgent),
+              })
+              if (response.ok) {
+                alert('Agent created successfully!')
+                // Reset form
+                newAgent.name = ''
+                newAgent.owner = ''
+                newAgent.purpose = ''
+                newAgent.scopes = ['browse']
+                newAgent.spend_limit = 0
+                newAgent.ttl_hours = 24
+                fetchAgents()
+                fetchTrustLog()
+              } else {
+                const errorData = await response.json()
+                alert(`Error creating agent: ${errorData.detail}`)
+              }
+            } catch (error) {
+              console.error('Error creating agent:', error)
+              alert('Failed to create agent.')
+            }
+          }
+
+          const revokeAgent = async (agentId) => {
+            if (!confirm('Are you sure you want to revoke this agent?')) {
+              return
+            }
+            try {
+              const response = await fetch(`${API_BASE}/agents/${agentId}/revoke`, {
+                method: 'POST',
+              })
+              if (response.ok) {
+                alert('Agent revoked successfully!')
+                fetchAgents()
+                fetchTrustLog()
+              } else {
+                const errorData = await response.json()
+                alert(`Error revoking agent: ${errorData.detail}`)
+              }
+            } catch (error) {
+              console.error('Error revoking agent:', error)
+              alert('Failed to revoke agent.')
+            }
+          }
+
+          onMounted(() => {
+            fetchAgents()
+            fetchTrustLog()
+            // Refresh logs every 5 seconds
+            setInterval(() => {
+              fetchAgents()
+              fetchTrustLog()
+            }, 5000)
+          })
+
+          return {
+            newAgent,
+            allScopes,
+            agents,
+            trustLog,
+            createAgent,
+            revokeAgent,
+          }
+        },
+      }).mount('#app')
+    </script>
+  </body>
+</html>
