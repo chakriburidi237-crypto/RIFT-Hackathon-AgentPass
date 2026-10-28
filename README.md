@@ -2,7 +2,6 @@
 
 > **"Scoped Delegations. Instant Revocation. Verifiable Public Trust Logs for Autonomous AI."**
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.111%2B-009688.svg)](https://fastapi.tiangolo.com/)
 [![JWT Security](https://img.shields.io/badge/JWT-HS256_Signed-black.svg)](https://jwt.io/)
@@ -139,6 +138,5 @@ tests/test_agentpass.py::test_trust_log_audit PASSED
 
 ---
 
-## 📄 License
+## 📄 License and Copyright\n\nAll rights reserved © 2026 Chakradhar Buridi.
 
-MIT License © 2026 Chakradhar Buridi. Built for the RIFT Hackathon Problem Statement 2 ("AI's First Day Online").
